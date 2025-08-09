@@ -105,11 +105,11 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
 
   return (
     <form
-      className="space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm"
+      className="space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm h-[100vh] flex flex-col"
       onSubmit={handleSubmit(onSubmit as any)}
     >
       <h2 className="text-lg font-bold mb-4 text-center">Add Mobile Entry</h2>
-      <div className="flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2">
         <div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="date" className="px-1 flex items-center gap-1">

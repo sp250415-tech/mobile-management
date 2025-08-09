@@ -4,10 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
-import { customerSchema, type CustomerFormValues } from "../schema";
+import { customerSchema } from "../schema";
 
+import type { SubmitHandler } from "react-hook-form";
+
+type CustomerFormValues = {
+  name: string;
+  phone: string;
+  email: string;
+  status: "Active" | "Inactive";
+};
 interface AddCustomerFormProps {
-  onSubmit: (data: CustomerFormValues) => void;
+  onSubmit: SubmitHandler<CustomerFormValues>;
   onCancel: () => void;
   defaultValues?: CustomerFormValues;
 }
@@ -15,7 +23,10 @@ interface AddCustomerFormProps {
 export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({ onSubmit, onCancel, defaultValues }) => {
   const { register, handleSubmit, formState: { errors } } = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
-    defaultValues,
+    defaultValues: {
+      status: "Active",
+      ...defaultValues,
+    },
   });
 
   return (

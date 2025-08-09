@@ -5,7 +5,11 @@ import { CustomerTable } from "../components/Customer/customer-table";
 import type { Customer } from "../components/Customer/customer-table";
 import { AddCustomerForm } from "../components/Customer/add-customer-form";
 
-const initialCustomers: Customer[] = [];
+const initialCustomers: Customer[] = [
+  { name: "John Doe", phone: "9876543210", email: "john@example.com", status: "Active" },
+  { name: "Jane Smith", phone: "9123456780", email: "jane@example.com", status: "Inactive" },
+  { name: "Alice Brown", phone: "9988776655", email: "alice@example.com", status: "Active" },
+];
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
@@ -18,12 +22,6 @@ const Customers: React.FC = () => {
   const handleAdd = () => {
     setEditingCustomer(null);
     setSheetMode('add');
-    setSheetOpen(true);
-  };
-
-  const handleView = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setSheetMode('view');
     setSheetOpen(true);
   };
 
@@ -46,6 +44,9 @@ const Customers: React.FC = () => {
     setSheetOpen(false);
   };
 
+  const handleToggle = () => {
+  }
+
   // Pagination logic
   const total = customers.length;
   const paginatedCustomers = customers.slice((page - 1) * pageSize, page * pageSize);
@@ -55,7 +56,7 @@ const Customers: React.FC = () => {
       <CustomerTable
         customers={paginatedCustomers}
         onAdd={handleAdd}
-        onView={handleView}
+        onToggle={handleToggle}
         onEdit={handleEdit}
         onDelete={handleDelete}
         page={page}

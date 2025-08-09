@@ -40,6 +40,14 @@ export const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required").max(10, "Phone number should have a maximum of 10 numbers"),
   email: z.string().email("Invalid email address"),
+  status: z.enum(["Active", "Inactive"]),
 });
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
+
+// Devices
+export const deviceSchema = z.object({
+  deviceName: z.string().min(1, "Device name is required"),
+});
+
+export type DeviceFormValues = z.infer<typeof deviceSchema>;
