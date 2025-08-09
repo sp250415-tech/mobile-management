@@ -43,7 +43,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     setValue,
     formState: { errors },
     reset,
-    watch,
+    // watch,
   } = useForm({
     resolver: zodResolver(AddEntriesSchema),
     defaultValues: {
@@ -53,7 +53,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   });
 
   // Watch file fields for validation
-  const backImages = watch("backImages");
+  // const backImages = watch("backImages");
 
   // Define the type for your form fields
   interface AddMobileEntryFormValues {
