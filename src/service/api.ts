@@ -87,7 +87,19 @@ export const useGetEntries = () =>
 export const useAddEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (entry: any) => apiUtil.post(`${BASE_URL}/add-entry`, entry),
+    mutationFn: (entry: any) => {
+      // Check if entry is FormData
+      if (entry instanceof FormData) {
+        // For FormData, we need to let the browser set the Content-Type with boundary
+        // But we need to delete any existing Content-Type to avoid conflicts
+        return apiUtil.post(`${BASE_URL}/add-entry`, entry, {
+          headers: {
+            'Content-Type': undefined, // Let browser set it
+          },
+        });
+      }
+      return apiUtil.post(`${BASE_URL}/add-entry`, entry);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entries'] }),
   });
 };
@@ -95,8 +107,13 @@ export const useAddEntry = () => {
 export const useUpdateEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...entry }: { id: string | number; [key: string]: any }) =>
-      apiUtil.post(`${BASE_URL}/update-entry/${id}`, entry),
+    mutationFn: ({ id, ...entry }: { id: string | number; [key: string]: any }) => {
+      // Check if entry is FormData
+      const isFormData = entry instanceof FormData;
+      // Don't set Content-Type for FormData - axios will set it automatically with boundary
+      const config = isFormData ? {} : undefined;
+      return apiUtil.post(`${BASE_URL}/update-entry/${id}`, entry, config);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entries'] }),
   });
 };

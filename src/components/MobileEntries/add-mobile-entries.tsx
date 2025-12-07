@@ -49,6 +49,9 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   const [frontFiles, setFrontFiles] = React.useState<File[]>([]);
   const [additionalFiles, setAdditionalFiles] = React.useState<File[]>([]);
   const [viewing, setViewing] = React.useState<"front" | "additional" | null>(null);
+  // Existing image URLs from API (for edit mode)
+  const [existingFrontImage, setExistingFrontImage] = React.useState<string | null>(null);
+  const [existingAdditionalImages, setExistingAdditionalImages] = React.useState<string[]>([]);
   // Dialog states for adding customer/device
   const [showAddCustomer, setShowAddCustomer] = React.useState(false);
   const [showAddDevice, setShowAddDevice] = React.useState(false);
@@ -129,15 +132,6 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   // Ensure defaults are present even if the user didn't interact with the selects
   if (!data.productStatus) data.productStatus = "Received";
   if (!data.paymentStatus) data.paymentStatus = "Not received";
-    // Convert file inputs to arrays for easier handling
-    const frontImages =
-      data.frontImages && data.frontImages.length > 0
-        ? Array.from(data.frontImages)
-        : [];
-    const additionalImages =
-      data.additionalImages && data.additionalImages.length > 0
-        ? Array.from(data.additionalImages)
-        : [];
 
     // Remove IQTC prefix from internalRef before sending to API
     let internalRefValue = data.internalRef;
@@ -150,25 +144,58 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     const selectedDevice = devices.find((d: any) => d.deviceName === data.device);
     const selectedModel = models.find((m: any) => m.modelName === data.model);
 
-    // Create a copy of data without customer, device, and model fields
-    const { customer, device, model, ...restData } = data;
-
-    // Convert date to ISO string for backend or display
-    const formData = {
-      ...restData,
+    // Create JSON payload for addEntryRequest
+    const entryRequest = {
       internalRef: internalRefValue,
+      externalRef: data.externalRef || null,
+      imei: data.imei || null,
+      issue: data.issue,
+      passCode: data.passcode || null,
       date: data.date instanceof Date ? data.date.toISOString() : data.date,
-      customerId: selectedCustomer?.id,
+      status: data.productStatus,
+      estimatedAmount: data.estimate || "0",
       deviceId: selectedDevice?.id,
       modelId: selectedModel?.id,
-      frontImages,
-      additionalImages,
+      customerId: selectedCustomer?.id,
+      contact: data.contact || null,
+      paymentStatus: data.paymentStatus,
+      paymentMode: data.paymentMode || null,
     };
+
+    // Create FormData for multipart/form-data request
+    const formData = new FormData();
+    
+    // Add JSON data as a Blob with application/json content type
+    const jsonBlob = new Blob([JSON.stringify(entryRequest)], {
+      type: 'application/json'
+    });
+    formData.append('addEntryRequest', jsonBlob);
+    
+    // Add front image if exists
+    if (frontFiles.length > 0) {
+      formData.append('frontImage', frontFiles[0]);
+    }
+    
+    // Add additional images if exist
+    if (additionalFiles.length > 0) {
+      additionalFiles.forEach((file) => {
+        formData.append('additionalImages', file);
+      });
+    }
+
+    // Debug: Log FormData contents
+    console.log("=== FormData Debug ===");
+    console.log("Entry Request:", JSON.stringify(entryRequest, null, 2));
+    console.log("Front Files:", frontFiles);
+    console.log("Additional Files:", additionalFiles);
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
     if (onSubmitEntry) {
       onSubmitEntry(formData);
     } else {
-      alert("Submitted! " + JSON.stringify(formData, null, 2));
+      alert("Submitted!");
     }
   reset();
   setDate(new Date());
@@ -255,12 +282,12 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
         console.log("After setValue, form values:", { customer: watch("customer"), device: watch("device"), model: watch("model") });
       }, 0);
 
-      // if entry has image URLs, seed previews (expecting arrays of URLs)
-      if (entryData.frontImages && Array.isArray(entryData.frontImages)) {
-        setFrontPreviews(entryData.frontImages as string[]);
+      // Set existing images from API response
+      if (entry.frontImage) {
+        setExistingFrontImage(entry.frontImage);
       }
-      if (entryData.additionalImages && Array.isArray(entryData.additionalImages)) {
-        setAdditionalPreviews(entryData.additionalImages as string[]);
+      if (entry.additionalImages && Array.isArray(entry.additionalImages) && entry.additionalImages.length > 0) {
+        setExistingAdditionalImages(entry.additionalImages);
       }
     }
   }, [mode, entry, watch, reset]);
@@ -699,6 +726,21 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
               {errors.frontImages.message as string}
             </span>
           )}
+          {/* Show existing image from API (edit mode) */}
+          {existingFrontImage && frontFiles.length === 0 && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600 mb-1">Existing Image:</p>
+              <a 
+                href={existingFrontImage} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-blue-600 hover:underline text-sm"
+              >
+                View Current Front Image
+              </a>
+            </div>
+          )}
+          {/* Show newly selected file */}
           {frontFiles.length > 0 && (
             <div className="mt-2">
               <p className="text-sm text-gray-600 mb-2">Selected: {frontFiles[0].name}</p>
@@ -733,6 +775,26 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
               setValue("additionalImages", list, { shouldValidate: true });
             }}
           />
+          {/* Show existing images from API (edit mode) */}
+          {existingAdditionalImages.length > 0 && additionalFiles.length === 0 && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600 mb-1">Existing Images ({existingAdditionalImages.length}):</p>
+              <div className="flex flex-col gap-1">
+                {existingAdditionalImages.map((url, idx) => (
+                  <a 
+                    key={idx}
+                    href={url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    View Additional Image {idx + 1}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Show newly selected files */}
           {additionalFiles.length > 0 && (
             <div className="mt-2">
               <p className="text-sm text-gray-600 mb-2">

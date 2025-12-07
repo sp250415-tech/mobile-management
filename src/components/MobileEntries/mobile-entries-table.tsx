@@ -66,6 +66,9 @@ export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, t
             customer: item.customer.name,
             contact: item.customer.phone,
             model: item.model?.modelName || item.entry.model,
+            // Preserve image URLs for view mode
+            frontImage: item.frontImage || null,
+            additionalImages: item.additionalImages || [],
           };
         }
         return item;
@@ -140,36 +143,73 @@ export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, t
                         <div className="space-y-4">
                           <h2 className="text-lg font-semibold mb-4 text-center">Mobile Entry Details</h2>
                           {viewEntry && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {[
-                                ["date", "Received Date"],
-                                ["internalRef", "Internal Ref"],
-                                ["externalRef", "External Ref"],
-                                ["customer", "Customer"],
-                                ["contact", "Phone"],
-                                ["device", "Device"],
-                                ["model", "Model"],
-                                ["imei", "IMEI"],
-                                ["issue", "Issue"],
-                                ["passcode", "Passcode"],
-                                ["status", "Status"],
-                                ["paymentStatus", "Payment Status"],
-                                ["estimate", "Estimated Amount"],
-                              ]
-                                .filter(([key]) => viewEntry[key] !== undefined && viewEntry[key] !== null)
-                                .map(([key, label]) => {
-                                  let value = viewEntry[key];
-                                  if (key === "date" && value) {
-                                    value = dayjs(value).format("DD-MMM-YYYY");
-                                  }
-                                  return (
-                                    <div key={key} className="flex flex-col border rounded p-2 bg-muted/50">
-                                      <span className="text-xs font-semibold text-muted-foreground mb-1">{label}</span>
-                                      <span className="text-sm break-words">{String(value)}</span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
+                            <>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {[
+                                  ["date", "Received Date"],
+                                  ["internalRef", "Internal Ref"],
+                                  ["externalRef", "External Ref"],
+                                  ["customer", "Customer"],
+                                  ["contact", "Phone"],
+                                  ["device", "Device"],
+                                  ["model", "Model"],
+                                  ["imei", "IMEI"],
+                                  ["issue", "Issue"],
+                                  ["passcode", "Passcode"],
+                                  ["status", "Status"],
+                                  ["paymentStatus", "Payment Status"],
+                                  ["estimate", "Estimated Amount"],
+                                ]
+                                  .filter(([key]) => viewEntry[key] !== undefined && viewEntry[key] !== null)
+                                  .map(([key, label]) => {
+                                    let value = viewEntry[key];
+                                    if (key === "date" && value) {
+                                      value = dayjs(value).format("DD-MMM-YYYY");
+                                    }
+                                    return (
+                                      <div key={key} className="flex flex-col border rounded p-2 bg-muted/50">
+                                        <span className="text-xs font-semibold text-muted-foreground mb-1">{label}</span>
+                                        <span className="text-sm break-words">{String(value)}</span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                              
+                              {/* Front Image */}
+                              {viewEntry.frontImage && (
+                                <div className="mt-4 border rounded p-3 bg-muted/50">
+                                  <span className="text-xs font-semibold text-muted-foreground mb-2 block">Front Image</span>
+                                  <a 
+                                    href={viewEntry.frontImage} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
+                                    View Front Image
+                                  </a>
+                                </div>
+                              )}
+                              
+                              {/* Additional Images */}
+                              {viewEntry.additionalImages && Array.isArray(viewEntry.additionalImages) && viewEntry.additionalImages.length > 0 && (
+                                <div className="mt-4 border rounded p-3 bg-muted/50">
+                                  <span className="text-xs font-semibold text-muted-foreground mb-2 block">Additional Images ({viewEntry.additionalImages.length})</span>
+                                  <div className="flex flex-col gap-2">
+                                    {viewEntry.additionalImages.map((url: string, idx: number) => (
+                                      <a 
+                                        key={idx}
+                                        href={url} 
+                                        target="_blank" 
+                                        rel="noreferrer" 
+                                        className="text-blue-600 hover:underline text-sm"
+                                      >
+                                        View Additional Image {idx + 1}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                         <DialogClose asChild>
