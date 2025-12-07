@@ -16,7 +16,9 @@ interface DeviceTableComponentProps {
 
 const DeviceTableComponent: React.FC<DeviceTableComponentProps> = (props) => {
   if (!DeviceTable) return <div>DeviceTable not found.</div>;
-  return <DeviceTable {...props} />;
+  return <DeviceTable onPageSizeChange={function (): void {
+    throw new Error("Function not implemented.");
+  } } {...props} />;
 };
 
 export default DeviceTableComponent;

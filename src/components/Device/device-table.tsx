@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 export interface Device {
   id: string;
   deviceName: string;
-  enabled: boolean;
+  isActive: boolean;
 }
 
 interface DeviceTableProps {
@@ -19,10 +19,11 @@ interface DeviceTableProps {
   page: number;
   pageSize: number;
   total: number;
-  onPageChange: (page: number) => void;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: number) => void;
 }
 
-export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, onAdd, onEdit, onDelete, onToggle, page, pageSize, total, onPageChange }) => {
+export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, onAdd, onEdit, onDelete, onToggle, page, pageSize, total, onPageChange, onPageSizeChange }) => {
   const totalPages = Math.ceil(total / pageSize);
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 w-full md:px-8">
@@ -50,7 +51,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, onAdd, onEdit
               <TableRow key={device.id} className="align-middle">
                 <TableCell className="text-left align-middle max-w-[220px] truncate" title={device.deviceName}>{device.deviceName}</TableCell>
                 <TableCell className="text-left align-middle">
-                  {device.enabled ? (
+                  {device.isActive ? (
                     <span className="inline-flex items-center gap-1 text-green-600"><CheckCircle2 className="w-4 h-4" /> Enabled</span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-red-600"><XCircle className="w-4 h-4" /> Disabled</span>
@@ -65,17 +66,19 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, onAdd, onEdit
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button size="icon" variant="ghost" onClick={() => onDelete(device)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => onDelete(device)} disabled={!device.isActive}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </TooltipTrigger>
                     <TooltipContent>Delete</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button size="icon" variant="ghost" onClick={() => onToggle(device)}>
-                        {device.enabled ? <XCircle className="w-4 h-4 text-red-500" /> : <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                        {device.isActive ? <XCircle className="w-4 h-4 text-red-500" /> : <CheckCircle2 className="w-4 h-4 text-green-600" />}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{device.enabled ? "Disable" : "Enable"}</TooltipContent>
+                    <TooltipContent>{device.isActive ? "Disable" : "Enable"}</TooltipContent>
                   </Tooltip>
                 </TableCell>
               </TableRow>
@@ -85,6 +88,16 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, onAdd, onEdit
       </Table>
       {/* Pagination Controls */}
       <div className="flex justify-end items-center gap-2 mt-4">
+          <label className="text-sm mr-2">Items per page:</label>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={pageSize}
+            onChange={e => onPageSizeChange(Number(e.target.value))}
+          >
+            {[5, 10, 20, 50].map(size => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
         <Button size="sm" variant="outline" onClick={() => onPageChange(page - 1)} disabled={page === 1}>
           Prev
         </Button>

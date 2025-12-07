@@ -1,0 +1,176 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiUtil } from '../lib/api-util';
+
+// const BASE_URL = 'http://35.207.219.55:8080/api/mobile';
+const BASE_URL = 'http://localhost:8080/api/mobile';
+
+// Devices
+export const useGetDevices = () =>
+  useQuery({
+    queryKey: ['devices'],
+    queryFn: async () => {
+      const res = await apiUtil.get(`${BASE_URL}/get-devices`);
+      return Array.isArray(res?.data?.devices) ? res.data.devices : [];
+    },
+  });
+
+export const useAddDevice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (device: any) => apiUtil.post(`${BASE_URL}/add-device`, device),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['devices'] }),
+  });
+};
+
+export const useUpdateDevice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...device }: { id: string | number; [key: string]: any }) =>
+      apiUtil.post(`${BASE_URL}/update-device/${id}`, device),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['devices'] }),
+  });
+};
+
+export const useDeleteDevice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string | number) => apiUtil.delete(`${BASE_URL}/delete-device/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['devices'] }),
+  });
+};
+
+// Customers
+export const useGetCustomers = () =>
+  useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const res = await apiUtil.get(`${BASE_URL}/get-customers`);
+      return Array.isArray(res?.data?.customers) ? res.data.customers : [];
+    },
+  });
+
+export const useAddCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (customer: any) => apiUtil.post(`${BASE_URL}/add-customer`, customer),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
+  });
+};
+
+export const useUpdateCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...customer }: { id: string | number; [key: string]: any }) =>
+      apiUtil.post(`${BASE_URL}/update-customer/${id}`, customer),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
+  });
+};
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string | number) => apiUtil.delete(`${BASE_URL}/delete-customer/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
+  });
+};
+
+// Entries
+export const useGetEntries = () =>
+  useQuery({
+    queryKey: ['entries'],
+    queryFn: async () => {
+      const res = await apiUtil.get(`${BASE_URL}/get-entries`);
+      return Array.isArray(res?.data?.entries) ? res.data.entries : [];
+    },
+  });
+
+export const useAddEntry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (entry: any) => apiUtil.post(`${BASE_URL}/add-entry`, entry),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entries'] }),
+  });
+};
+
+export const useUpdateEntry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...entry }: { id: string | number; [key: string]: any }) =>
+      apiUtil.post(`${BASE_URL}/update-entry/${id}`, entry),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entries'] }),
+  });
+};
+
+export const useDeleteEntry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string | number) => apiUtil.delete(`${BASE_URL}/delete-entry/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entries'] }),
+  });
+};
+
+// Models
+export const useGetModels = (deviceId?: number | string) =>
+  useQuery({
+    queryKey: ['models', deviceId],
+    queryFn: async () => {
+      if (!deviceId) return [];
+      const res = await apiUtil.get(`${BASE_URL}/get-model?deviceId=${deviceId}`);
+      return Array.isArray(res?.data?.models) ? res.data.models : [];
+    },
+    enabled: !!deviceId,
+  });
+
+export const useGetAllModels = () =>
+  useQuery({
+    queryKey: ['all-models'],
+    queryFn: async () => {
+      const res = await apiUtil.get(`${BASE_URL}/get-all-models`);
+      return Array.isArray(res?.data?.models) ? res.data.models : [];
+    },
+  });
+
+export const useAddModel = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (model: { deviceId: number | string; modelName: string }) =>
+      apiUtil.post(`${BASE_URL}/add-model`, model),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-models'] });
+      queryClient.invalidateQueries({ queryKey: ['models'] });
+    },
+  });
+};
+
+export const useUpdateModel = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...model }: { id: number | string; deviceId?: number | string; modelName?: string; isActive?: boolean }) =>
+      apiUtil.post(`${BASE_URL}/update-model`, { ...model, modelId: id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-models'] });
+      queryClient.invalidateQueries({ queryKey: ['models'] });
+    },
+  });
+};
+
+export const useDeleteModel = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number | string) => apiUtil.delete(`${BASE_URL}/delete-model/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-models'] });
+      queryClient.invalidateQueries({ queryKey: ['models'] });
+    },
+  });
+};
+
+export const useGetNextEntryId = () =>
+  useQuery({
+    queryKey: ['next-entry-id'],
+    queryFn: async () => {
+      const res = await apiUtil.get(`${BASE_URL}/get-next-entry-id`);
+      return res; // Returns the number directly
+    },
+  });
+

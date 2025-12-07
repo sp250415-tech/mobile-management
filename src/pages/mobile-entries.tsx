@@ -1,66 +1,101 @@
-import React from "react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { AddMobileEntries } from "@/components/MobileEntries/add-mobile-entries";
-import { MobileEntriesTable } from "@/components/MobileEntries/mobile-entries-table";
-import type { MobileEntry } from "@/components/MobileEntries/mobile-entries-table";
+import { useState } from "react";
+import { Sheet, SheetContent } from "../components/ui/sheet";
+import { MobileEntriesTable } from "../components/MobileEntries/mobile-entries-table";
+import { AddMobileEntries } from "../components/MobileEntries/add-mobile-entries";
+import Loader from "../components/ui/loader";
+import { toast } from "sonner";
+import {
+  useGetEntries,
+  useAddEntry,
+  useUpdateEntry,
+} from "../service/api";
 
-const PAGE_SIZE = 2;
+const MobileEntries: React.FC = () => {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState<"add" | "edit">("add");
+  const [editingEntry, setEditingEntry] = useState<any | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-export const MobileEntries = () => {
-  const [open, setOpen] = React.useState(false);
+  const { data: entries = [], isLoading } = useGetEntries();
+  const addEntry = useAddEntry();
+  const updateEntry = useUpdateEntry();
 
-  React.useEffect(() => {
-    // This effect can be used for any initialization logic
-    console.log("MobileEntries component mounted");
-  }, []);
-
-  const [entries, setEntries] = React.useState<MobileEntry[]>([]);
-  const [page, setPage] = React.useState(1);
-
-  // Add new entry handler
-  const handleAddEntry = (
-    entry: Omit<MobileEntry, "status"> & { status?: MobileEntry["status"] }
-  ) => {
-    setEntries((prev) => [
-      {
-        ...entry,
-        status: entry.status || "in progress",
-      },
-      ...prev,
-    ]);
-    setOpen(false);
-  };
-
-  // Paginate entries
+  const total = entries.length;
   const paginatedEntries = entries.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
+    (page - 1) * pageSize,
+    page * pageSize
   );
 
+  const handleAdd = () => {
+    setSheetMode("add");
+    setEditingEntry(null);
+    setSheetOpen(true);
+  };
+
+  const handleEdit = (entry: any) => {
+    setSheetMode("edit");
+    setEditingEntry(entry);
+    setSheetOpen(true);
+  };
+
+  const handleFormSubmit = (data: any) => {
+    if (sheetMode === "add") {
+      addEntry.mutate(data, {
+        onSuccess: () => {
+          toast.success("Entry added successfully");
+          setSheetOpen(false);
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || error?.info?.message || "Failed to add entry";
+          toast.error(errorMessage);
+        },
+      });
+    } else if (sheetMode === "edit" && editingEntry) {
+      updateEntry.mutate(
+        { ...editingEntry, ...data },
+        {
+          onSuccess: () => {
+            toast.success("Entry updated successfully");
+            setSheetOpen(false);
+          },
+          onError: (error: any) => {
+            const errorMessage = error?.message || error?.info?.message || "Failed to update entry";
+            toast.error(errorMessage);
+          },
+        }
+      );
+    }
+  };
+
   return (
-    <div className="w-full py-8">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="max-w-md w-full">
-          <AddMobileEntries
-            onSubmitEntry={(entry: any) => {
-              handleAddEntry(entry);
-            }}
-            onClose={() => setOpen(false)}
-          />
-        </SheetContent>
+    <div className="w-full mx-auto">
+      {isLoading ? (
+        <Loader />
+      ) : (
         <MobileEntriesTable
           entries={paginatedEntries}
+          onAdd={handleAdd}
+          onEdit={handleEdit}
           page={page}
-          pageSize={PAGE_SIZE}
-          total={entries.length}
+          pageSize={pageSize}
+          total={total}
           onPageChange={setPage}
-          onEdit={() => {
-            setOpen(true);
-            // Logic to handle editing an entry can be added here
-          }}
-          onAdd={() => setOpen(true)}
+          onPageSizeChange={size => { setPageSize(size); setPage(1); }}
         />
+      )}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="w-[400px] overflow-hidden">
+          <AddMobileEntries
+            onSubmitEntry={handleFormSubmit}
+            onClose={() => setSheetOpen(false)}
+            entry={sheetMode === "edit" ? editingEntry : undefined}
+            mode={sheetMode}
+          />
+        </SheetContent>
       </Sheet>
     </div>
   );
 };
+
+export default MobileEntries;

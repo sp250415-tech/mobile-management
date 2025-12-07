@@ -1,23 +1,41 @@
-
 import React, { useState } from "react";
 import { Sheet, SheetContent } from "../components/ui/sheet";
 import { CustomerTable } from "../components/Customer/customer-table";
 import type { Customer } from "../components/Customer/customer-table";
 import { AddCustomerForm } from "../components/Customer/add-customer-form";
-
-const initialCustomers: Customer[] = [
-  { name: "John Doe", phone: "9876543210", email: "john@example.com", status: "Active" },
-  { name: "Jane Smith", phone: "9123456780", email: "jane@example.com", status: "Inactive" },
-  { name: "Alice Brown", phone: "9988776655", email: "alice@example.com", status: "Active" },
-];
+import Loader from "../components/ui/loader";
+import { toast } from "sonner";
+import {
+  useGetCustomers,
+  useAddCustomer,
+  useUpdateCustomer,
+  useDeleteCustomer,
+} from '../service/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 
 const Customers: React.FC = () => {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [page, setPage] = useState(1);
-  const pageSize = 5;
+  const [pageSize, setPageSize] = useState(5);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [sheetMode, setSheetMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+
+  // API hooks
+  const { data: customers = [], isLoading } = useGetCustomers();
+  const addCustomer = useAddCustomer();
+  const updateCustomer = useUpdateCustomer();
+  const deleteCustomer = useDeleteCustomer();
 
   const handleAdd = () => {
     setEditingCustomer(null);
@@ -32,38 +50,101 @@ const Customers: React.FC = () => {
   };
 
   const handleDelete = (customer: Customer) => {
-    setCustomers((prev) => prev.filter((c) => c !== customer));
+    setCustomerToDelete(customer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (customerToDelete && (customerToDelete as any).id) {
+      deleteCustomer.mutate((customerToDelete as any).id, {
+        onSuccess: () => {
+          toast.success("Customer deleted successfully");
+          setDeleteDialogOpen(false);
+          setCustomerToDelete(null);
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || error?.info?.message || "Failed to delete customer";
+          toast.error(errorMessage);
+        },
+      });
+    }
   };
 
   const handleFormSubmit = (data: Customer) => {
     if (sheetMode === 'add') {
-      setCustomers((prev) => [...prev, data]);
-    } else if (sheetMode === 'edit' && editingCustomer) {
-      setCustomers((prev) => prev.map((c) => (c === editingCustomer ? data : c)));
+      addCustomer.mutate({
+        ...data,
+        phone: data.phone,
+      }, {
+        onSuccess: () => {
+          toast.success("Customer added successfully");
+          setSheetOpen(false);
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || error?.info?.message || "Failed to add customer";
+          toast.error(errorMessage);
+        },
+      });
+    } else if (sheetMode === 'edit' && editingCustomer && (editingCustomer as any).id) {
+      updateCustomer.mutate({
+        ...data,
+        phone: data.phone,
+      }, {
+        onSuccess: () => {
+          toast.success("Customer updated successfully");
+          setSheetOpen(false);
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || error?.info?.message || "Failed to update customer";
+          toast.error(errorMessage);
+        },
+      });
     }
-    setSheetOpen(false);
   };
 
-  const handleToggle = () => {
-  }
+  const handleToggle = (customer: Customer) => {
+    if (customer && (customer as any).id) {
+      // Toggle isActive and status
+      const newIsActive = !customer.isActive;
+      const newStatus = newIsActive ? 'Active' : 'Inactive';
+      updateCustomer.mutate({
+        ...customer,
+        isActive: newIsActive,
+        status: newStatus,
+      }, {
+        onSuccess: () => {
+          toast.success(newIsActive ? "Customer enabled successfully" : "Customer disabled successfully");
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || error?.info?.message || "Failed to update customer status";
+          toast.error(errorMessage);
+        },
+      });
+    }
+  };
 
   // Pagination logic
   const total = customers.length;
   const paginatedCustomers = customers.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8">
-      <CustomerTable
-        customers={paginatedCustomers}
-        onAdd={handleAdd}
-        onToggle={handleToggle}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={setPage}
-      />
+    <div className="w-full mx-auto">
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <CustomerTable
+          customers={paginatedCustomers}
+          onAdd={handleAdd}
+          onToggle={handleToggle}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+        />
+      )}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="w-[400px] overflow-y-auto">
           {sheetMode === 'view' && editingCustomer ? (
@@ -76,13 +157,41 @@ const Customers: React.FC = () => {
             </div>
           ) : (
             <AddCustomerForm
-              onSubmit={handleFormSubmit}
+              onSubmit={(data) => handleFormSubmit({
+                id: editingCustomer?.id ?? '',
+                ...data,
+                email: data.email || '',
+                isActive: data.status === 'Active',
+              })}
               onCancel={() => setSheetOpen(false)}
-              defaultValues={sheetMode === 'edit' && editingCustomer ? editingCustomer : undefined}
+              defaultValues={sheetMode === 'edit' && editingCustomer ? {
+                name: editingCustomer.name,
+                phone: editingCustomer.phone,
+                email: editingCustomer.email,
+                status: editingCustomer.isActive ? 'Active' : 'Inactive',
+              } : undefined}
             />
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you want to delete <strong>{customerToDelete?.name}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

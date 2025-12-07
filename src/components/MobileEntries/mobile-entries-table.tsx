@@ -8,41 +8,22 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, Loader2Icon, CheckCircle2Icon, XCircleIcon, Pencil } from "lucide-react";
+import { PlusIcon, Loader2Icon, CheckCircle2Icon, Pencil } from "lucide-react";
+import { Eye } from "lucide-react";
+import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
+import dayjs from "dayjs";
 
 export type MobileEntry = {
   internalRef: string;
   date: string;
-  status: "in progress" | "completed" | "todo";
+  status: "in progress" | "completed" | "todo" | "received";
   device: string;
   model: string;
   customer: string;
   contact: string;
-  paymentStatus: "Paid" | "Pending" | "Credit";
+  paymentStatus: "Paid" | "Pending" | "Credit" | null;
 };
 
-const sampleEntries: MobileEntry[] = [
-  {
-    internalRef: "INT001",
-    date: "2025-08-01",
-    status: "completed",
-    device: "iPhone 14",
-    model: "A2897",
-    customer: "John Doe",
-    contact: "9876543210",
-    paymentStatus: "Paid",
-  },
-  {
-    internalRef: "INT002",
-    date: "2025-08-02",
-    status: "in progress",
-    device: "Samsung S23",
-    model: "SM-S911B",
-    customer: "Jane Smith",
-    contact: "9123456780",
-    paymentStatus: "Pending",
-  },
-];
 
 const statusMap = {
   "in progress": {
@@ -56,24 +37,40 @@ const statusMap = {
     label: "Completed",
   },
   todo: {
-    color: "text-red-600",
-    icon: <XCircleIcon className="mr-1" size={16} />,
-    label: "To Do",
+    color: "text-blue-600",
+    icon: <Eye className="mr-1" size={16} />,
+    label: "Received",
   },
 };
 
 interface Props {
   entries?: MobileEntry[];
-  page: number;
-  pageSize: number;
-  total: number;
-  onPageChange: (page: number) => void;
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: number) => void;
   onAdd: () => void;
   onEdit: (entry: MobileEntry) => void;
 }
 
-export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, total, onPageChange, onAdd, onEdit }) => {
-  const displayEntries = entries && entries.length > 0 ? entries : sampleEntries;
+export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, total, onPageChange, onAdd, onEdit, onPageSizeChange }) => {
+  const [viewEntry, setViewEntry] = React.useState<any | null>(null);
+  // Map entries to flat structure for table rendering
+  const displayEntries = entries && entries.length > 0
+    ? entries.map((item: any) => {
+        if (item.entry && item.device && item.customer) {
+          return {
+            ...item.entry,
+            device: item.device.deviceName,
+            customer: item.customer.name,
+            contact: item.customer.phone,
+            model: item.model?.modelName || item.entry.model,
+          };
+        }
+        return item;
+      })
+    : [];
   const totalPages = Math.ceil(total / pageSize);
 
   function formatDate(dateStr: string) {
@@ -96,6 +93,7 @@ export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, t
         <TableHeader>
           <TableRow>
             <TableHead>Internal Ref</TableHead>
+            <TableHead>External Ref</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Device</TableHead>
@@ -109,35 +107,97 @@ export const MobileEntriesTable: React.FC<Props> = ({ entries, page, pageSize, t
         <TableBody>
           {displayEntries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground">No entries found.</TableCell>
+              <TableCell colSpan={10} className="text-center text-muted-foreground">No entries found.</TableCell>
             </TableRow>
           ) : (
-            displayEntries.map((entry, idx) => (
-              <TableRow key={idx}>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.internalRef}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{formatDate(entry.date)}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">
-                  <span className={`inline-flex items-center font-medium ${statusMap[entry.status].color}`}>
-                    {statusMap[entry.status].icon}
-                    {statusMap[entry.status].label}
-                  </span>
-                </TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.device}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.model}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.customer}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.contact}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">{entry.paymentStatus}</TableCell>
-                <TableCell className="px-2 py-2 text-left align-middle">
-                  <Button size="icon" variant="ghost" onClick={() => onEdit(entry)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
+            displayEntries.map((entry, idx) => {
+              const statusKey = typeof entry.status === "string" ? entry.status.toLowerCase() as keyof typeof statusMap : "todo";
+              const status = statusMap[statusKey] ?? statusMap["todo"];
+              return (
+                <TableRow key={idx}>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.internalRef}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.externalRef || "-"}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{formatDate(entry.date)}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">
+                    <span className={`inline-flex items-center font-medium ${status?.color ?? ""}`}>
+                      {status?.icon}
+                      {status?.label}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.device}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.model}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.customer}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.contact}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle">{entry.paymentStatus}</TableCell>
+                  <TableCell className="px-2 py-2 text-left align-middle flex gap-2">
+                    <Dialog open={viewEntry?.internalRef === entry.internalRef} onOpenChange={open => !open && setViewEntry(null)}>
+                      <DialogTrigger asChild>
+                        <Button size="icon" variant="ghost" onClick={() => setViewEntry(entry)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <div className="space-y-4">
+                          <h2 className="text-lg font-semibold mb-4 text-center">Mobile Entry Details</h2>
+                          {viewEntry && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {[
+                                ["date", "Received Date"],
+                                ["internalRef", "Internal Ref"],
+                                ["externalRef", "External Ref"],
+                                ["customer", "Customer"],
+                                ["contact", "Phone"],
+                                ["device", "Device"],
+                                ["model", "Model"],
+                                ["imei", "IMEI"],
+                                ["issue", "Issue"],
+                                ["passcode", "Passcode"],
+                                ["status", "Status"],
+                                ["paymentStatus", "Payment Status"],
+                                ["estimate", "Estimated Amount"],
+                              ]
+                                .filter(([key]) => viewEntry[key] !== undefined && viewEntry[key] !== null)
+                                .map(([key, label]) => {
+                                  let value = viewEntry[key];
+                                  if (key === "date" && value) {
+                                    value = dayjs(value).format("DD-MMM-YYYY");
+                                  }
+                                  return (
+                                    <div key={key} className="flex flex-col border rounded p-2 bg-muted/50">
+                                      <span className="text-xs font-semibold text-muted-foreground mb-1">{label}</span>
+                                      <span className="text-sm break-words">{String(value)}</span>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+                        <DialogClose asChild>
+                          <Button className="mt-6 w-full" variant="outline">Close</Button>
+                        </DialogClose>
+                      </DialogContent>
+                    </Dialog>
+                    <Button size="icon" variant="ghost" onClick={() => onEdit(entry)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
       <div className="flex justify-end items-center gap-2 mt-4">
+        <label className="text-sm mr-2">Items per page:</label>
+        <select
+          className="border rounded px-2 py-1 text-sm"
+          value={pageSize}
+          onChange={e => onPageSizeChange(Number(e.target.value))}
+        >
+          {[5, 10, 20, 50].map(size => (
+            <option key={size} value={size}>{size}</option>
+          ))}
+        </select>
         <Button size="sm" variant="outline" onClick={() => onPageChange(page - 1)} disabled={page === 1}>
           Prev
         </Button>

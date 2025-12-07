@@ -11,7 +11,7 @@ import type { SubmitHandler } from "react-hook-form";
 type CustomerFormValues = {
   name: string;
   phone: string;
-  email: string;
+  email?: string;
   status: "Active" | "Inactive";
 };
 interface AddCustomerFormProps {
@@ -24,8 +24,8 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({ onSubmit, onCa
   const { register, handleSubmit, formState: { errors } } = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      status: "Active",
       ...defaultValues,
+      status: "Active",
     },
   });
 
@@ -51,6 +51,7 @@ export const AddCustomerForm: React.FC<AddCustomerFormProps> = ({ onSubmit, onCa
         <Input id="email" {...register("email")} />
         {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
       </div>
+  {/* Status is set to 'Active' by default and hidden from UI */}
       <div className="flex gap-2 justify-end pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">Submit</Button>
