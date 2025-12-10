@@ -146,7 +146,13 @@ const Customers: React.FC = () => {
         />
       )}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-[400px] overflow-y-auto">
+        <SheetContent 
+          side="right" 
+          className="w-[400px] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           {sheetMode === 'view' && editingCustomer ? (
             <div className="p-4">
               <h2 className="text-lg font-semibold mb-4">Customer Details</h2>

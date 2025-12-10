@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUtil } from '../lib/api-util';
 
-// const BASE_URL = 'http://35.207.219.55:8080/api/mobile';
-const BASE_URL = 'http://localhost:8080/api/mobile';
+const BASE_URL = 'http://35.207.219.55:8080/api/mobile';
+// const BASE_URL = 'http://localhost:8080/api/mobile';
 
 // Devices
 export const useGetDevices = () =>

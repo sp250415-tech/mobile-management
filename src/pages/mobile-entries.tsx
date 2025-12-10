@@ -85,7 +85,13 @@ const MobileEntries: React.FC = () => {
         />
       )}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-[400px] overflow-hidden">
+        <SheetContent 
+          side="right" 
+          className="w-[400px] overflow-hidden"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           <AddMobileEntries
             onSubmitEntry={handleFormSubmit}
             onClose={() => setSheetOpen(false)}

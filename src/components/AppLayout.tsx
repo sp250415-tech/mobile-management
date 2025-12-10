@@ -7,6 +7,7 @@ import {
   Smartphone,
   Layers,
   Menu,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,13 +21,15 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { toast } from "sonner";
 
 const menuItems = [
   {
     title: "Dashboard",
     icon: Home,
-    path: "/",
+    path: "/dashboard",
   },
   {
     title: "Mobile Entries",
@@ -57,6 +60,13 @@ interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("username");
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
 
   return (
     <SidebarProvider>
@@ -89,6 +99,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
+          <SidebarFooter className="border-t p-4">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </Sidebar>
         <main className="flex-1 overflow-y-auto">
           <div className="border-b px-4 py-3 flex items-center gap-2 bg-white sticky top-0 z-10">

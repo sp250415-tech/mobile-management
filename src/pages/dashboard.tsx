@@ -1,6 +1,4 @@
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useGetEntries, useGetCustomers } from "@/service/api";
 // Prepare chart data
 // const dateCounts = entries.reduce<Record<string, number>>((acc, entry) => {
@@ -11,7 +9,6 @@ import { useGetEntries, useGetCustomers } from "@/service/api";
 // const chartData = Object.values(dateCounts);
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { data: entries = [], isLoading: loadingEntries } = useGetEntries();
   const { data: customers = [], isLoading: loadingCustomers } = useGetCustomers();
 

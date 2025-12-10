@@ -151,7 +151,13 @@ const Models: React.FC = () => {
         />
       )}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-[400px] overflow-y-auto">
+        <SheetContent 
+          side="right" 
+          className="w-[400px] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           <AddModelForm
             onSubmit={handleFormSubmit}
             onCancel={() => {

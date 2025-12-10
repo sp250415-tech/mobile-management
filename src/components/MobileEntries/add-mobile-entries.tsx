@@ -188,9 +188,6 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     console.log("Entry Request:", JSON.stringify(entryRequest, null, 2));
     console.log("Front Files:", frontFiles);
     console.log("Additional Files:", additionalFiles);
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
 
     if (onSubmitEntry) {
       onSubmitEntry(formData);
@@ -355,11 +352,11 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
 
   return (
     <form
-      className="space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm h-[100vh] flex flex-col"
+      className="space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm h-full flex flex-col"
       onSubmit={handleSubmit(onSubmit as any)}
     >
       <h2 className="text-lg font-bold mb-4 text-center">Add Mobile Entry</h2>
-      <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2 pb-4">
         <div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="date" className="px-1 flex items-center gap-1">
@@ -884,9 +881,11 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
           </DialogContent>
         </Dialog>
       </div>
-      <Button type="submit" className="w-full mt-2">
-        Submit
-      </Button>
+      <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t mt-auto">
+        <Button type="submit" className="w-full">
+          Submit
+        </Button>
+      </div>
     </form>
   );
 };
