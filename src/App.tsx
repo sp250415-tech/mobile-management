@@ -3,6 +3,7 @@ import Customers from "./pages/customers";
 import Dashboard from "./pages/dashboard";
 import Devices from "./pages/devices";
 import Models from "./pages/models";
+import PaymentPending from "./pages/payment-pending";
 import Login from "./pages/login";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import MobileEntries from "./pages/mobile-entries";
@@ -30,6 +31,7 @@ function App() {
                   <Route path="/customers" element={<Customers />} />
                   <Route path="/devices" element={<Devices />} />
                   <Route path="/models" element={<Models />} />
+                  <Route path="/payment-pending" element={<PaymentPending />} />
                 </Routes>
               </AppLayout>
             </ProtectedRoute>

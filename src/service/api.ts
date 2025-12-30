@@ -1,3 +1,65 @@
+// Payment Pending (customer-amounts-to-be-received)
+// MOCK: Payment Pending (customer-amounts-to-be-received)
+export const useGetPaymentPending = () =>
+  useQuery({
+    queryKey: ['payment-pending'],
+    queryFn: async () => {
+      // Mock response
+      return [
+        {
+          customerId: 1,
+          customerName: "John Doe",
+          totalAmountToBeReceived: 12000.0,
+          pendingEntries: [
+            {
+              entryId: 101,
+              estimate: 7000.0,
+              date: "2025-12-01",
+              status: "Pending"
+            },
+            {
+              entryId: 102,
+              estimate: 5000.0,
+              date: "2025-12-05",
+              status: "Pending"
+            }
+          ]
+        },
+        {
+          customerId: 2,
+          customerName: "Jane Smith",
+          totalAmountToBeReceived: 8000.0,
+          pendingEntries: [
+            {
+              entryId: 103,
+              estimate: 8000.0,
+              date: "2025-12-03",
+              status: "Pending"
+            }
+          ]
+        }
+      ];
+    },
+  });
+// Entries Stats (Delivered, Returns per month)
+export const useGetEntriesStats = (yearMonth: string) =>
+  useQuery({
+    queryKey: ['entries-stats', yearMonth],
+    queryFn: async () => {
+      const res = await apiUtil.get(
+        `${BASE_URL}/entries-stats?yearMonth=${yearMonth}&deliveredStatus=Delivered&returnsStatus=Returned`
+      );
+      // If the response is wrapped in a data property, unwrap it
+      if (res && typeof res === 'object' && 'totalEntries' in res) {
+        return res;
+      }
+      if (res && typeof res === 'object' && 'data' in res && typeof res.data === 'object') {
+        return res.data;
+      }
+      return {};
+    },
+    enabled: !!yearMonth,
+  });
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUtil } from '../lib/api-util';
 

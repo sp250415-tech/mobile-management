@@ -67,7 +67,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   const { data: devices = [], isLoading: loadingDevices, refetch: refetchDevices } = useGetDevices();
   
   // Fetch next entry ID only in add mode
-  const { data: nextEntryId } = useGetNextEntryId();
+  const { data: nextEntryId } = mode === "add" ? useGetNextEntryId() : { data: undefined };
   
   // Mutations for adding customer/device/model
   const addCustomerMutation = useAddCustomer();
@@ -87,9 +87,10 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     resolver: zodResolver(AddEntriesSchema),
     defaultValues: {
       date: new Date(),
-  estimate: "0",
-  productStatus: "Received",
-  paymentStatus: "Not received",
+      estimate: "0",
+      entryType: "Service",
+      productStatus: "Received",
+      paymentStatus: "Not received",
     },
   });
 
@@ -113,6 +114,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     date: Date | string;
     internalRef?: string;
     externalRef?: string;
+    entryType?: string;
     customer?: string;
     contact?: string;
     device?: string;
@@ -126,6 +128,9 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
     paymentMode?: string;
     frontImages?: FileList;
     additionalImages?: FileList;
+    // Add fields for Sale entry type
+    partNumberOrName?: string;
+    price?: string | number;
   }
 
   const onSubmit = (data: AddMobileEntryFormValues) => {
@@ -152,6 +157,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
       issue: data.issue,
       passCode: data.passcode || null,
       date: data.date instanceof Date ? data.date.toISOString() : data.date,
+      entryType: data.entryType,
       status: data.productStatus,
       estimatedAmount: data.estimate || "0",
       deviceId: selectedDevice?.id,
@@ -222,6 +228,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   }, [setValue]);
 
   // Set internal ref from API in add mode with IQTC prefix for display
+  // Set internal ref from API in add mode with IQTC prefix for display
   React.useEffect(() => {
     if (mode === "add" && nextEntryId) {
       setValue("internalRef", `IQTC${nextEntryId}`);
@@ -232,21 +239,12 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
   React.useEffect(() => {
     if (mode === "edit" && entry) {
       // Extract data from nested structure (API response format)
-      // The table flattens the data, so customer, device, and model are already strings
       const entryData = entry.entry || entry;
-      
-      // Customer, device, and model are already flattened to strings by the table
       const customerData = entry.customer || entryData.customer;
       const deviceData = entry.device || entryData.device;
       const modelData = entry.model;
-      
-      const currentInternalRef = watch("internalRef");
-      // Guard: only run if form hasn't been populated yet
-      if (currentInternalRef === entryData.internalRef) {
-        return; // Already populated
-      }
 
-      // map incoming entry fields to form fields where names match
+      // Always set internalRef from entry for edit mode
       const vals: any = {
         date: new Date(entryData.date || entry.date),
         internalRef: entryData.internalRef || entry.internalRef,
@@ -262,21 +260,17 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
         productStatus: entryData.status || entry.status, 
         paymentStatus: entryData.paymentStatus || entry.paymentStatus,
       };
-      
-      console.log("Edit mode - Setting form values:", vals);
-      
+
       reset(vals);
-      
+
       // Explicitly set Select values after reset to ensure they bind
-      // Use setTimeout to ensure reset completes first
       setTimeout(() => {
         if (vals.customer) setValue("customer", vals.customer);
         if (vals.device) setValue("device", vals.device);
         if (vals.model) setValue("model", vals.model);
         if (vals.productStatus) setValue("productStatus", vals.productStatus);
         if (vals.paymentStatus) setValue("paymentStatus", vals.paymentStatus);
-        setForceUpdate(prev => prev + 1); // Force re-render
-        console.log("After setValue, form values:", { customer: watch("customer"), device: watch("device"), model: watch("model") });
+        setForceUpdate(prev => prev + 1);
       }, 0);
 
       // Set existing images from API response
@@ -287,7 +281,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
         setExistingAdditionalImages(entry.additionalImages);
       }
     }
-  }, [mode, entry, watch, reset]);
+  }, [mode, entry, reset, setValue]);
 
   // cleanup object URLs on unmount
   React.useEffect(() => {
@@ -355,7 +349,7 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
       className="space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm h-full flex flex-col"
       onSubmit={handleSubmit(onSubmit as any)}
     >
-      <h2 className="text-lg font-bold mb-4 text-center">Add Mobile Entry</h2>
+      <h2 className="text-lg font-bold mb-4 text-center">{mode === "edit" ? "Edit Mobile Entry" : "Add Mobile Entry"}</h2>
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2 pb-4">
         <div>
           <div className="flex flex-col gap-2">
@@ -396,26 +390,66 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
           )}
         </div>
 
+
+
+
+        {watch("entryType") !== "Sale" && (
+          <div>
+            <Label className="mb-1">External Reference</Label>
+            <Input {...register("externalRef")} />
+          </div>
+        )}
+
         <div>
           <Label className="mb-1 flex items-center gap-1">
-            Internal Reference <span className="text-red-500">*</span>
+            Entry Type <span className="text-red-500">*</span>
           </Label>
-          <Input 
-            {...register("internalRef")} 
-            disabled
-            className="bg-gray-100 cursor-not-allowed"
-          />
-          {errors.internalRef && (
-            <span className="text-red-500 text-xs">
-              {errors.internalRef.message}
-            </span>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="Service"
+                {...register("entryType")}
+                checked={watch("entryType") === "Service"}
+                onChange={() => setValue("entryType", "Service")}
+              />
+              Service
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="Sale"
+                {...register("entryType")}
+                checked={watch("entryType") === "Sale"}
+                onChange={() => setValue("entryType", "Sale")}
+              />
+              Sale
+            </label>
+          </div>
+          {errors.entryType && (
+            <span className="text-red-500 text-xs">{errors.entryType.message as string}</span>
           )}
         </div>
 
-        <div>
-          <Label className="mb-1">External Reference</Label>
-          <Input {...register("externalRef")} />
-        </div>
+
+        {watch("entryType") !== "Sale" && (
+          <div>
+            <Label className="mb-1 flex items-center gap-1">
+              Internal Reference <span className="text-red-500">*</span>
+            </Label>
+            <Input 
+              {...register("internalRef")}
+              disabled
+              className="bg-gray-100 cursor-not-allowed"
+            />
+            {errors.internalRef && (
+              <span className="text-red-500 text-xs">
+                {errors.internalRef.message}
+              </span>
+            )}
+          </div>
+        )}
+
 
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -581,43 +615,66 @@ export const AddMobileEntries: React.FC<AddMobileEntriesProps> = ({
           )}
         </div>
 
-        <div>
-          <Label className="mb-1">IMEI/SERIAL</Label>
-          <Input {...register("imei")} />
-        </div>
 
-        <div>
-          <Label className="mb-1 flex items-center gap-1">
-            Issue <span className="text-red-500">*</span>
-          </Label>
-          <Textarea {...register("issue")} />
-          {errors.issue && (
-            <span className="text-red-500 text-xs">{errors.issue.message}</span>
-          )}
-        </div>
-
-        <div>
-          <Label className="mb-1">PASSCODE</Label>
-          <div className="relative">
-            <Input 
-              type={showPasscode ? "text" : "password"} 
-              {...register("passcode")} 
-              className="pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPasscode(!showPasscode)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPasscode ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <Label className="mb-1">Estimate</Label>
-          <Input type="number" {...register("estimate")} />
-        </div>
+        {watch("entryType") === "Sale" ? (
+          <>
+            <div>
+              <Label className="mb-1 flex items-center gap-1">
+                Part number / name <span className="text-red-500">*</span>
+              </Label>
+              <Input {...register("partNumberOrName")} />
+              {errors.partNumberOrName && (
+                <span className="text-red-500 text-xs">{errors.partNumberOrName.message as string}</span>
+              )}
+            </div>
+            <div>
+              <Label className="mb-1 flex items-center gap-1">
+                Price <span className="text-red-500">*</span>
+              </Label>
+              <Input type="number" {...register("price")} />
+              {errors.price && (
+                <span className="text-red-500 text-xs">{errors.price.message as string}</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <Label className="mb-1">IMEI/SERIAL</Label>
+              <Input {...register("imei")} />
+            </div>
+            <div>
+              <Label className="mb-1 flex items-center gap-1">
+                Issue <span className="text-red-500">*</span>
+              </Label>
+              <Textarea {...register("issue")} />
+              {errors.issue && (
+                <span className="text-red-500 text-xs">{errors.issue.message}</span>
+              )}
+            </div>
+            <div>
+              <Label className="mb-1">PASSCODE</Label>
+              <div className="relative">
+                <Input 
+                  type={showPasscode ? "text" : "password"} 
+                  {...register("passcode")} 
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasscode(!showPasscode)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasscode ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label className="mb-1">Estimate</Label>
+              <Input type="number" {...register("estimate")} />
+            </div>
+          </>
+        )}
 
         <div>
           <Label className="mb-1 flex items-center gap-1">

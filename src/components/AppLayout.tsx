@@ -51,6 +51,11 @@ const menuItems = [
     icon: Layers,
     path: "/models",
   },
+  {
+    title: "Payment Pending",
+    icon: FileText, // You can change to a more appropriate icon if desired
+    path: "/payment-pending",
+  },
 ];
 
 interface AppLayoutProps {
