@@ -19,35 +19,54 @@ const PrintLabel: React.FC<{ entry: any; onClose: () => void }> = ({ entry, onCl
     printWindow.document.write(`
       <html>
       <head>
+        <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
         <style>
           @page {
-            size: 5cm 2.5cm landscape;
-            margin: 0;
+            size: 1in 1in;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
           }
           @media print {
-            html, body { margin: 0; padding: 0; width: 5cm; height: 2.5cm; }
-            body { margin: 0; padding: 0; }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              width: 1in !important;
+              height: 1in !important;
+              overflow: hidden !important;
+              font-family: 'Bebas Neue', Arial, sans-serif !important;
+              font-weight: normal !important;
+            }
+            body { margin: 0 !important; padding: 0 !important; border: none !important; font-family: 'Bebas Neue', Arial, sans-serif !important; font-weight: normal !important; }
             .label {
-              width: 5cm; height: 2.5cm;
-              min-width: 189px; min-height: 95px;
-              max-width: 5cm; max-height: 2.5cm;
-              font-size: 10pt;
-              padding: 0.2cm 0.3cm;
+              width: 1in !important;
+              height: 1in !important;
+              min-width: 1in !important;
+              min-height: 1in !important;
+              max-width: 1in !important;
+              max-height: 1in !important;
+              font-size: 11pt;
+              padding: 0 !important;
               box-sizing: border-box;
               display: flex;
               flex-direction: column;
               justify-content: center;
               align-items: flex-start;
+              overflow: hidden !important;
+              border: none !important;
+              font-family: 'Bebas Neue', Arial, sans-serif !important;
+              font-weight: normal !important;
             }
-            .label strong { font-size: 11pt; }
-            .barcode { font-size: 12pt; font-weight: bold; letter-spacing: 2px; }
+            .label strong { font-size: 11pt; font-family: 'Bebas Neue', Arial, sans-serif !important; font-weight: normal !important; }
+            .barcode { font-size: 11pt; font-family: 'Bebas Neue', Arial, sans-serif !important; font-weight: normal !important; letter-spacing: 1px; }
           }
         </style>
       </head>
-      <body style="margin:0;padding:0;width:5cm;height:2.5cm;">
+      <body style="margin:0;padding:0;width:1in;height:1in;border:none;font-family:'Bebas Neue',Arial,sans-serif;font-weight:bold;">
         <div class="label">
           <div><span>${dateStr}</span> - <span class="barcode">${entry.internalRef}</span></div>
-          <div><strong>${entry.customer}</strong></div>
+          <div>${entry.customer}</div>
           <div>${entry.model}</div>
           <div>${entry.issue || ''}</div>
         </div>
